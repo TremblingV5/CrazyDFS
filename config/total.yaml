@@ -1,0 +1,11 @@
+total:
+    version: "0.1"
+    name: "CrazyDFS"
+    usage: "CrazyDFS"
+    help_name: "CrazyDFS"
+log:
+    level: "debug"
+    filename: "./log/log.log"
+    max_size: 200
+    max_age: 7
+    max_backups: 10
