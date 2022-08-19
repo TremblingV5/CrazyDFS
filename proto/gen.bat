@@ -1,0 +1,1 @@
+C:\Users\Administrator\AppData\Roaming\Python\Python37\site-packages\torch\bin\protoc --proto_path=proto/ --go_out=pl ugins=grpc:./proto --go-grpc_out=./proto ./proto/*.proto

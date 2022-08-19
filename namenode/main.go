@@ -21,7 +21,8 @@ type serverD2N struct {
 	proto.UnimplementedDN2NNServer
 }
 
-func (s serverD2N) HeartBeat(ctx context.Context, heartbeat *proto.Heartbeat) (*proto.DatanodeOperation, error) {
+// 接收DN的HeartBeat
+func (s serverD2N) DNHeartBeat(ctx context.Context, heartbeat *proto.Heartbeat) (*proto.DatanodeOperation, error) {
 	return nil, nil
 }
 

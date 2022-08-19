@@ -20,10 +20,10 @@ type ReplicaMeta struct {
 }
 
 type DNMeta struct {
-	Ip         string
-	DiskUsage  int64
-	HearbeatTS int64
-	Status     DNStatus
+	Ip          string
+	DiskUsage   int64
+	HeartbeatTS int64
+	Status      DNStatus
 }
 
 const (
