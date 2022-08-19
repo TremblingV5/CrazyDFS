@@ -8,6 +8,7 @@ import (
 )
 
 var TotalConf *items.Total
+var Conf any
 
 func InitConfig() error {
 	var config items.Total
@@ -25,4 +26,19 @@ func InitConfig() error {
 
 	TotalConf = &config
 	return nil
+}
+
+func InitNodeConfig[T items.DN | items.NN](config T, path string) (T, error) {
+	file, err := ioutil.ReadFile(path)
+
+	if err != nil {
+		return config, err
+	}
+
+	if err = yaml.Unmarshal(file, &config); err != nil {
+		return config, err
+	}
+
+	Conf = &config
+	return config, nil
 }

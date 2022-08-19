@@ -1,0 +1,6 @@
+port: "10000"
+nnHost: localhost
+interval: 3
+ioSize: 100
+blockSize: 8096
+heartbeatTimeout: 50

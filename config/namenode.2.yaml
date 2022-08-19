@@ -1,0 +1,6 @@
+port: "10001"
+host: localhost
+replicaNum: 3
+interval: 3
+ioSize: 100
+blockSize: 8096
