@@ -1,0 +1,167 @@
+syntax = "proto3";
+
+option go_package = "../protocol";
+
+package protocol;
+
+/*
+    Common
+*/
+
+message BlockReplicaList {
+    repeated BlockLocation BlockReplicaList = 1;
+}
+
+message BlockLocation {
+    enum ReplicaMetaState {
+        ReplicaPending = 0;
+        ReplicaCommitted = 1;
+    }
+    string ipAddr = 1;
+    string blockName = 2;
+    int64 blockSize = 3;
+    int64 replicaID = 4;
+    ReplicaMetaState replicaState  = 5;
+}
+
+/*
+    请求参数
+*/
+
+message FileOperationArgs {
+    enum Mode {
+        READ = 0;
+        WRITE = 1;
+    }
+    string fileName = 1;
+    Mode mode = 2;
+    int64 blockNum = 3;
+}
+
+message MetaOperationArgs {
+    enum OperateMetaMode {
+        DELETE = 0;
+        MKDIR = 1;
+    }
+    string fileName = 1;
+    OperateMetaMode mode = 2;
+}
+
+message RenameArgs {
+    string sourcePath = 1;
+    string targetPath = 2;
+}
+
+message PathArgs {
+    string pathName = 1;
+}
+
+message MetaStore{
+    FileLocationResp FileLocationResp = 1;
+    string filePath = 2;
+    uint64 fileSize = 3;
+    string clientName = 4;
+}
+
+message GetLeaseArgs{
+    PathArgs pathname = 1;
+    string clientName = 2;
+}
+
+
+message FileWriteStream {
+    File file = 1;
+    BlockReplicaList BlockReplicaList = 2;
+}
+
+message Ping {
+    string ping = 1;
+}
+
+message Heartbeat {
+    uint64 DiskUsage = 2;
+}
+
+message RegisterDataNodeReq {
+    bool new = 1;
+    uint64 DiskUsage = 2;
+}
+
+/*
+    返回值
+*/
+
+message FileLocationResp {
+    repeated BlockReplicaList FileBlocksList = 1;
+}
+
+message OperationStatus {
+    bool success = 1;
+}
+
+message FileMetaInfo {
+    string fileName = 1;
+    string fileSize = 2;
+    bool isDir = 3;
+}
+
+message DirMetaList {
+    repeated FileMetaInfo metaList = 1;
+}
+
+message File {
+    bytes content = 1;
+}
+
+message DatanodeOperation {
+    enum Operation {
+        DELETE = 0;
+        REPLICATE = 1;
+    }
+    Operation operation = 1;
+    string ipAddr = 2;
+}
+
+// Client向NameNode请求接口
+service Client2NN {
+    // GET/PUT
+    rpc FileOperation(FileOperationArgs) returns (FileLocationResp);
+    // 创建文件
+    rpc CreateFile(FileOperationArgs) returns (FileLocationResp);
+    // 单参操作 Delete和Mkdir
+    rpc MetaOperation(MetaOperationArgs) returns (OperationStatus);
+    // Rename
+    rpc RenameMeta(RenameArgs) returns (OperationStatus);
+    // Stat
+    rpc GetFileMeta(PathArgs) returns (FileMetaInfo);
+    // List
+    rpc GetDirMeta(PathArgs) returns (DirMetaList);
+    // 数据传输完成信号
+    rpc PutComplete(MetaStore) returns (OperationStatus);
+    // 更新租约
+    rpc RenewLock(GetLeaseArgs) returns (OperationStatus);
+}
+
+// DataNode向NameNode请求接口
+service DN2NN {
+    // 心跳
+    rpc HeartBeat(Heartbeat) returns (DatanodeOperation);
+    // 汇报自身状态
+    rpc BlockReport(BlockReplicaList) returns (OperationStatus);
+    // 注册
+    rpc Register(RegisterDataNodeReq) returns (OperationStatus);
+}
+
+// NameNode向DataNode请求接口
+service NN2DN {
+    // 获取block的信息
+    rpc GetReport(Ping) returns (BlockReplicaList);
+}
+
+// Client向DataNode请求接口
+service Client2DN {
+    // 从block中读数据
+    rpc GetBlock(FileOperationArgs) returns (stream File){};
+    // 向block写数据
+    rpc WriteBlock(stream FileWriteStream) returns (OperationStatus){};
+}
