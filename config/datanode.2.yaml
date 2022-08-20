@@ -1,6 +1,10 @@
+name: "dn02"
+replicaName: "replica01"
 port: "10003"
 nnHost: localhost
 nnPort: "10000"
 interval: 3
 ioSize: 100
-blockSize: 8096
+blockSize: 1024
+blockNum: 64
+path: "./DNData/"

@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net"
+	"strconv"
 	"time"
 
 	"github.com/TremblingV5/CrazyDFS/config/items"
@@ -45,7 +47,7 @@ func (s server) PutBlock(blockServer proto.Client2DN_WriteBlockServer) error {
 		blockServer.SendAndClose(&proto.OperationStatus{Success: false})
 	}
 
-	name := stream.BlockReplicaList.BlockReplicaList[0].BlockName
+	name := stream.BlockList.BlockL[0].BlockName
 	b := DNService.GetBlock(name, "w")
 	file := make([]byte, 0)
 
@@ -87,7 +89,9 @@ func HeartBeat(config items.DN) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	res, err := c.HeartBeat(ctx, &proto.Heartbeat{})
+	res, err := c.HeartBeat(ctx, &proto.Heartbeat{
+		Addr: utils.GetIP().String() + ":" + config.Port,
+	})
 	if err != nil {
 		panic(err)
 	}
@@ -97,9 +101,9 @@ func HeartBeat(config items.DN) {
 
 func BlockReport(config items.DN) {
 	duration := time.Second * time.Duration(config.HeartBeatInterval)
-	time.Sleep(duration * 10)
+	time.Sleep(duration * 5)
 
-	conn, err := grpc.Dial(config.NNHost+":"+config.NNPort, grpc.WithInsecure(), grpc.WithBlock())
+	conn, err := grpc.Dial(config.NNHost+":"+config.NNPort, grpc.WithInsecure())
 	if err != nil {
 		panic(err)
 	}
@@ -109,9 +113,21 @@ func BlockReport(config items.DN) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	res, err := c.BlockReport(ctx, &proto.BlockReplicaList{
-		BlockReplicaList: BlockList,
-	})
+	req := &proto.BlockList{
+		BlockL: BlockList,
+		Num:    int64(len(BlockList)),
+		DiskUsage: func() int64 {
+			num := 0
+			for _, item := range BlockList {
+				if item.ReplicaState == proto.BlockLocation_Using {
+					num++
+				}
+			}
+			return int64(num)
+		}(),
+		DNName: config.Name,
+	}
+	res, err := c.BlockReport(ctx, req)
 	if err != nil {
 		panic(err)
 	}
@@ -121,7 +137,9 @@ func BlockReport(config items.DN) {
 }
 
 func Register(config items.DN) error {
-	conn, err := grpc.Dial(config.NNHost+":"+config.NNPort, grpc.WithInsecure(), grpc.WithBlock())
+	fmt.Println("Start to register data node to name node")
+
+	conn, err := grpc.Dial(config.NNHost+":"+config.NNPort, grpc.WithInsecure())
 	if err != nil {
 		panic(err)
 	}
@@ -132,7 +150,8 @@ func Register(config items.DN) error {
 	defer cancel()
 
 	status, err := c.Register(ctx, &proto.RegisterDataNodeReq{
-		New: true,
+		New:  true,
+		Addr: utils.GetIP().String() + ":" + config.Port,
 	})
 	if err != nil {
 		panic(err)
@@ -146,11 +165,30 @@ func Register(config items.DN) error {
 	return nil
 }
 
+func Init(config items.DN) {
+	dataPath := config.Path + config.Name
+	blockNum := config.BlockNum
+	list, _ := ioutil.ReadDir(dataPath)
+	if len(list) > 0 {
+		// 已经初始化过
+		BlockList = DNService.ReadInitedBlock(list)
+		fmt.Println("Blocks has been initialized")
+	} else {
+		// 尚未初始化
+		BlockList = DNService.InitBlock(dataPath, blockNum)
+		fmt.Println("First time to init blocks")
+	}
+
+	fmt.Println("Initialization successful with " + strconv.FormatInt(int64(len(BlockList)), 10) + " blocks")
+}
+
 func StartServer(path string) {
 	config, err := utils.InitNodeConfig(items.DN{}, path)
 	if err != nil {
 		panic(err)
 	}
+
+	Init(config)
 
 	listen, err := net.Listen("tcp", "0.0.0.0:"+config.Port)
 	if err != nil {

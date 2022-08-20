@@ -6,7 +6,7 @@ import (
 )
 
 type Block struct {
-	Name      string
+	ID        string
 	Offset    int64
 	ChunkSize int
 	Reader    *bufio.Reader
@@ -15,3 +15,5 @@ type Block struct {
 	File      *os.File
 	BlockSize int64
 }
+
+type BlockID int64

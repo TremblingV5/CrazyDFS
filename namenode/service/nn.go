@@ -1,7 +1,6 @@
 package NNService
 
 import (
-	"sort"
 	"time"
 
 	"github.com/TremblingV5/CrazyDFS/config/items"
@@ -11,14 +10,14 @@ import (
 
 var config, _ = utils.InitNodeConfig(items.NN{}, values.DataNodeConfigPath)
 
-func (nn *NameNode) RegisterDN(DNAddr string, diskUsage int64) {
+func (nn *NameNode) RegisterDN(name string, DNAddr string, diskUsage int64) {
 	meta := DNMeta{
 		Ip:          DNAddr,
 		DiskUsage:   diskUsage,
 		HeartbeatTS: time.Now().Unix(),
 		Status:      DNUp,
 	}
-	nn.DNList = append(nn.DNList, meta)
+	nn.DNList[name] = &meta
 }
 
 func (nn *NameNode) HeartbeatReceiver() {
@@ -34,11 +33,5 @@ func (nn *NameNode) HeartbeatReceiver() {
 }
 
 func (nn *NameNode) GetDN() DNMeta {
-	sort.SliceStable(
-		nn.DNList,
-		func(i int, j int) bool {
-			return nn.DNList[i].DiskUsage < nn.DNList[j].DiskUsage
-		},
-	)
-	return nn.DNList[0]
+	return DNMeta{}
 }

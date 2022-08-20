@@ -3,4 +3,4 @@ nnHost: localhost
 nnPort: "10000"
 interval: 3
 ioSize: 100
-blockSize: 8096
+blockSize: 1024

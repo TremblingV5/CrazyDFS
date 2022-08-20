@@ -1,27 +1,30 @@
 syntax = "proto3";
 
-option go_package = "../protocol";
+option go_package = "../proto;proto";
 
-package protocol;
+package proto;
 
 /*
     Common
 */
 
-message BlockReplicaList {
-    repeated BlockLocation BlockReplicaList = 1;
+message BlockList {
+    repeated BlockLocation BlockL = 1;
+    int64 num = 2;
+    int64 DiskUsage = 3;
+    string DNName = 4;
 }
 
 message BlockLocation {
-    enum ReplicaMetaState {
-        ReplicaPending = 0;
-        ReplicaCommitted = 1;
+    enum BlockStatus {
+        Idle = 0;
+        Using = 1;
     }
     string ipAddr = 1;
     string blockName = 2;
     int64 blockSize = 3;
-    int64 replicaID = 4;
-    ReplicaMetaState replicaState  = 5;
+    string replicaID = 4;
+    BlockStatus replicaState  = 5;
 }
 
 /*
@@ -71,7 +74,7 @@ message GetLeaseArgs{
 
 message FileWriteStream {
     File file = 1;
-    BlockReplicaList BlockReplicaList = 2;
+    BlockList BlockList = 2;
 }
 
 message Ping {
@@ -80,11 +83,16 @@ message Ping {
 
 message Heartbeat {
     uint64 DiskUsage = 2;
+    string Addr = 3;
 }
 
 message RegisterDataNodeReq {
     bool new = 1;
     uint64 DiskUsage = 2;
+    string Addr = 3;
+    string Name = 4;
+    uint64 BlockNum = 5;
+    string ReplicaName = 6;
 }
 
 /*
@@ -92,7 +100,7 @@ message RegisterDataNodeReq {
 */
 
 message FileLocationResp {
-    repeated BlockReplicaList FileBlocksList = 1;
+    repeated BlockList FileBlocksList = 1;
 }
 
 message OperationStatus {
@@ -126,8 +134,9 @@ message DatanodeOperation {
 service Client2NN {
     // GET/PUT
     rpc FileOperation(FileOperationArgs) returns (FileLocationResp);
+    rpc GetFile(PathArgs) returns (FileLocationResp);
     // 创建文件
-    rpc CreateFile(FileOperationArgs) returns (FileLocationResp);
+    rpc PutFile(PathArgs) returns (FileLocationResp);
     // 单参操作 Delete和Mkdir
     rpc MetaOperation(MetaOperationArgs) returns (OperationStatus);
     // Rename
@@ -147,7 +156,7 @@ service DN2NN {
     // 心跳
     rpc HeartBeat(Heartbeat) returns (DatanodeOperation);
     // 汇报自身状态
-    rpc BlockReport(BlockReplicaList) returns (OperationStatus);
+    rpc BlockReport(BlockList) returns (OperationStatus);
     // 注册
     rpc Register(RegisterDataNodeReq) returns (OperationStatus);
 }
@@ -155,7 +164,7 @@ service DN2NN {
 // NameNode向DataNode请求接口
 service NN2DN {
     // 获取block的信息
-    rpc GetReport(Ping) returns (BlockReplicaList);
+    rpc GetReport(Ping) returns (BlockList);
 }
 
 // Client向DataNode请求接口

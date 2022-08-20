@@ -7,4 +7,8 @@ type DN struct {
 	HeartBeatInterval int64  `yaml:"interval"`
 	IOSize            int64  `yaml:"ioSize"`
 	BlockSize         int64  `yaml:"blockSize"`
+	BlockNum          int64  `yaml:"blockNum"`
+	Name              string `yaml:"name"`
+	ReplicaName       string `yaml:"replicaName"`
+	Path              string `yaml:"path"`
 }

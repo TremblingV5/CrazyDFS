@@ -18,3 +18,8 @@
 .vscode/
 
 log/
+
+DirTree/
+TempDirTree/
+DNData/
+NNData/

@@ -4,14 +4,64 @@ import (
 	"bufio"
 	"errors"
 	"io"
+	"io/fs"
+	"io/ioutil"
 	"os"
 
 	"github.com/TremblingV5/CrazyDFS/config/items"
+	"github.com/TremblingV5/CrazyDFS/proto"
 	"github.com/TremblingV5/CrazyDFS/utils"
 	"github.com/TremblingV5/CrazyDFS/values"
 )
 
 var config, _ = utils.InitNodeConfig(items.DN{}, values.DataNodeConfigPath)
+
+func InitBlock(dataPath string, blockNum int64) []*proto.BlockLocation {
+	var blockList []*proto.BlockLocation
+
+	currId := BlockID(1)
+
+	for i := int64(1); i <= blockNum; i++ {
+		blockName := currId.ToString()
+		newBlock := proto.BlockLocation{
+			IpAddr:       utils.GetIP().String() + ":" + config.Port,
+			BlockName:    blockName,
+			BlockSize:    0,
+			ReplicaID:    config.ReplicaName,
+			ReplicaState: proto.BlockLocation_Idle,
+		}
+
+		ioutil.WriteFile(dataPath+"\\"+blockName, []byte{1}, 0777)
+
+		blockList = append(blockList, &newBlock)
+		currId = currId.Next()
+	}
+
+	return blockList
+}
+
+func ReadInitedBlock(fileList []fs.FileInfo) []*proto.BlockLocation {
+	var blockList []*proto.BlockLocation
+
+	for _, item := range fileList {
+		newBlock := proto.BlockLocation{
+			IpAddr:    utils.GetIP().String() + ":" + config.Port,
+			BlockName: item.Name(),
+			BlockSize: item.Size(),
+			ReplicaID: config.ReplicaName,
+			ReplicaState: func(size int64) proto.BlockLocation_BlockStatus {
+				if size > 1 {
+					return proto.BlockLocation_Using
+				} else {
+					return proto.BlockLocation_Idle
+				}
+			}(item.Size()),
+		}
+		blockList = append(blockList, &newBlock)
+	}
+
+	return blockList
+}
 
 func (b *Block) initBlock(name string, mode string) {
 	var err error
@@ -32,7 +82,7 @@ func (b *Block) initBlock(name string, mode string) {
 	}
 
 	b.File = file
-	b.Name = name
+	b.ID = name
 	b.Reader = reader
 	b.ChunkSize = int(config.IOSize)
 	b.BlockSize = config.BlockSize

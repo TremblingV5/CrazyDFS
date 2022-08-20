@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             v3.11.4
-// source: proto/protocol.proto
+// source: protocol.proto
 
 package proto
 
@@ -24,8 +24,9 @@ const _ = grpc.SupportPackageIsVersion7
 type Client2NNClient interface {
 	// GET/PUT
 	FileOperation(ctx context.Context, in *FileOperationArgs, opts ...grpc.CallOption) (*FileLocationResp, error)
+	GetFile(ctx context.Context, in *PathArgs, opts ...grpc.CallOption) (*FileLocationResp, error)
 	// 创建文件
-	CreateFile(ctx context.Context, in *FileOperationArgs, opts ...grpc.CallOption) (*FileLocationResp, error)
+	PutFile(ctx context.Context, in *PathArgs, opts ...grpc.CallOption) (*FileLocationResp, error)
 	// 单参操作 Delete和Mkdir
 	MetaOperation(ctx context.Context, in *MetaOperationArgs, opts ...grpc.CallOption) (*OperationStatus, error)
 	// Rename
@@ -57,9 +58,18 @@ func (c *client2NNClient) FileOperation(ctx context.Context, in *FileOperationAr
 	return out, nil
 }
 
-func (c *client2NNClient) CreateFile(ctx context.Context, in *FileOperationArgs, opts ...grpc.CallOption) (*FileLocationResp, error) {
+func (c *client2NNClient) GetFile(ctx context.Context, in *PathArgs, opts ...grpc.CallOption) (*FileLocationResp, error) {
 	out := new(FileLocationResp)
-	err := c.cc.Invoke(ctx, "/proto.Client2NN/CreateFile", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/proto.Client2NN/GetFile", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *client2NNClient) PutFile(ctx context.Context, in *PathArgs, opts ...grpc.CallOption) (*FileLocationResp, error) {
+	out := new(FileLocationResp)
+	err := c.cc.Invoke(ctx, "/proto.Client2NN/PutFile", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -126,8 +136,9 @@ func (c *client2NNClient) RenewLock(ctx context.Context, in *GetLeaseArgs, opts 
 type Client2NNServer interface {
 	// GET/PUT
 	FileOperation(context.Context, *FileOperationArgs) (*FileLocationResp, error)
+	GetFile(context.Context, *PathArgs) (*FileLocationResp, error)
 	// 创建文件
-	CreateFile(context.Context, *FileOperationArgs) (*FileLocationResp, error)
+	PutFile(context.Context, *PathArgs) (*FileLocationResp, error)
 	// 单参操作 Delete和Mkdir
 	MetaOperation(context.Context, *MetaOperationArgs) (*OperationStatus, error)
 	// Rename
@@ -150,8 +161,11 @@ type UnimplementedClient2NNServer struct {
 func (UnimplementedClient2NNServer) FileOperation(context.Context, *FileOperationArgs) (*FileLocationResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FileOperation not implemented")
 }
-func (UnimplementedClient2NNServer) CreateFile(context.Context, *FileOperationArgs) (*FileLocationResp, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreateFile not implemented")
+func (UnimplementedClient2NNServer) GetFile(context.Context, *PathArgs) (*FileLocationResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetFile not implemented")
+}
+func (UnimplementedClient2NNServer) PutFile(context.Context, *PathArgs) (*FileLocationResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PutFile not implemented")
 }
 func (UnimplementedClient2NNServer) MetaOperation(context.Context, *MetaOperationArgs) (*OperationStatus, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method MetaOperation not implemented")
@@ -202,20 +216,38 @@ func _Client2NN_FileOperation_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Client2NN_CreateFile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FileOperationArgs)
+func _Client2NN_GetFile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PathArgs)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(Client2NNServer).CreateFile(ctx, in)
+		return srv.(Client2NNServer).GetFile(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.Client2NN/CreateFile",
+		FullMethod: "/proto.Client2NN/GetFile",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(Client2NNServer).CreateFile(ctx, req.(*FileOperationArgs))
+		return srv.(Client2NNServer).GetFile(ctx, req.(*PathArgs))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Client2NN_PutFile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PathArgs)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(Client2NNServer).PutFile(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.Client2NN/PutFile",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(Client2NNServer).PutFile(ctx, req.(*PathArgs))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -340,8 +372,12 @@ var Client2NN_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Client2NN_FileOperation_Handler,
 		},
 		{
-			MethodName: "CreateFile",
-			Handler:    _Client2NN_CreateFile_Handler,
+			MethodName: "GetFile",
+			Handler:    _Client2NN_GetFile_Handler,
+		},
+		{
+			MethodName: "PutFile",
+			Handler:    _Client2NN_PutFile_Handler,
 		},
 		{
 			MethodName: "MetaOperation",
@@ -369,7 +405,259 @@ var Client2NN_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto/protocol.proto",
+	Metadata: "protocol.proto",
+}
+
+// DN2NNClient is the client API for DN2NN service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type DN2NNClient interface {
+	// 心跳
+	HeartBeat(ctx context.Context, in *Heartbeat, opts ...grpc.CallOption) (*DatanodeOperation, error)
+	// 汇报自身状态
+	BlockReport(ctx context.Context, in *BlockList, opts ...grpc.CallOption) (*OperationStatus, error)
+	// 注册
+	Register(ctx context.Context, in *RegisterDataNodeReq, opts ...grpc.CallOption) (*OperationStatus, error)
+}
+
+type dN2NNClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewDN2NNClient(cc grpc.ClientConnInterface) DN2NNClient {
+	return &dN2NNClient{cc}
+}
+
+func (c *dN2NNClient) HeartBeat(ctx context.Context, in *Heartbeat, opts ...grpc.CallOption) (*DatanodeOperation, error) {
+	out := new(DatanodeOperation)
+	err := c.cc.Invoke(ctx, "/proto.DN2NN/HeartBeat", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *dN2NNClient) BlockReport(ctx context.Context, in *BlockList, opts ...grpc.CallOption) (*OperationStatus, error) {
+	out := new(OperationStatus)
+	err := c.cc.Invoke(ctx, "/proto.DN2NN/BlockReport", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *dN2NNClient) Register(ctx context.Context, in *RegisterDataNodeReq, opts ...grpc.CallOption) (*OperationStatus, error) {
+	out := new(OperationStatus)
+	err := c.cc.Invoke(ctx, "/proto.DN2NN/Register", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// DN2NNServer is the server API for DN2NN service.
+// All implementations must embed UnimplementedDN2NNServer
+// for forward compatibility
+type DN2NNServer interface {
+	// 心跳
+	HeartBeat(context.Context, *Heartbeat) (*DatanodeOperation, error)
+	// 汇报自身状态
+	BlockReport(context.Context, *BlockList) (*OperationStatus, error)
+	// 注册
+	Register(context.Context, *RegisterDataNodeReq) (*OperationStatus, error)
+	mustEmbedUnimplementedDN2NNServer()
+}
+
+// UnimplementedDN2NNServer must be embedded to have forward compatible implementations.
+type UnimplementedDN2NNServer struct {
+}
+
+func (UnimplementedDN2NNServer) HeartBeat(context.Context, *Heartbeat) (*DatanodeOperation, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method HeartBeat not implemented")
+}
+func (UnimplementedDN2NNServer) BlockReport(context.Context, *BlockList) (*OperationStatus, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BlockReport not implemented")
+}
+func (UnimplementedDN2NNServer) Register(context.Context, *RegisterDataNodeReq) (*OperationStatus, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Register not implemented")
+}
+func (UnimplementedDN2NNServer) mustEmbedUnimplementedDN2NNServer() {}
+
+// UnsafeDN2NNServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to DN2NNServer will
+// result in compilation errors.
+type UnsafeDN2NNServer interface {
+	mustEmbedUnimplementedDN2NNServer()
+}
+
+func RegisterDN2NNServer(s grpc.ServiceRegistrar, srv DN2NNServer) {
+	s.RegisterService(&DN2NN_ServiceDesc, srv)
+}
+
+func _DN2NN_HeartBeat_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Heartbeat)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DN2NNServer).HeartBeat(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.DN2NN/HeartBeat",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DN2NNServer).HeartBeat(ctx, req.(*Heartbeat))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DN2NN_BlockReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BlockList)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DN2NNServer).BlockReport(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.DN2NN/BlockReport",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DN2NNServer).BlockReport(ctx, req.(*BlockList))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DN2NN_Register_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RegisterDataNodeReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DN2NNServer).Register(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.DN2NN/Register",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DN2NNServer).Register(ctx, req.(*RegisterDataNodeReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// DN2NN_ServiceDesc is the grpc.ServiceDesc for DN2NN service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var DN2NN_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "proto.DN2NN",
+	HandlerType: (*DN2NNServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "HeartBeat",
+			Handler:    _DN2NN_HeartBeat_Handler,
+		},
+		{
+			MethodName: "BlockReport",
+			Handler:    _DN2NN_BlockReport_Handler,
+		},
+		{
+			MethodName: "Register",
+			Handler:    _DN2NN_Register_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "protocol.proto",
+}
+
+// NN2DNClient is the client API for NN2DN service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type NN2DNClient interface {
+	// 获取block的信息
+	GetReport(ctx context.Context, in *Ping, opts ...grpc.CallOption) (*BlockList, error)
+}
+
+type nN2DNClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewNN2DNClient(cc grpc.ClientConnInterface) NN2DNClient {
+	return &nN2DNClient{cc}
+}
+
+func (c *nN2DNClient) GetReport(ctx context.Context, in *Ping, opts ...grpc.CallOption) (*BlockList, error) {
+	out := new(BlockList)
+	err := c.cc.Invoke(ctx, "/proto.NN2DN/GetReport", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// NN2DNServer is the server API for NN2DN service.
+// All implementations must embed UnimplementedNN2DNServer
+// for forward compatibility
+type NN2DNServer interface {
+	// 获取block的信息
+	GetReport(context.Context, *Ping) (*BlockList, error)
+	mustEmbedUnimplementedNN2DNServer()
+}
+
+// UnimplementedNN2DNServer must be embedded to have forward compatible implementations.
+type UnimplementedNN2DNServer struct {
+}
+
+func (UnimplementedNN2DNServer) GetReport(context.Context, *Ping) (*BlockList, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetReport not implemented")
+}
+func (UnimplementedNN2DNServer) mustEmbedUnimplementedNN2DNServer() {}
+
+// UnsafeNN2DNServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to NN2DNServer will
+// result in compilation errors.
+type UnsafeNN2DNServer interface {
+	mustEmbedUnimplementedNN2DNServer()
+}
+
+func RegisterNN2DNServer(s grpc.ServiceRegistrar, srv NN2DNServer) {
+	s.RegisterService(&NN2DN_ServiceDesc, srv)
+}
+
+func _NN2DN_GetReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Ping)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NN2DNServer).GetReport(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.NN2DN/GetReport",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NN2DNServer).GetReport(ctx, req.(*Ping))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// NN2DN_ServiceDesc is the grpc.ServiceDesc for NN2DN service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var NN2DN_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "proto.NN2DN",
+	HandlerType: (*NN2DNServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetReport",
+			Handler:    _NN2DN_GetReport_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "protocol.proto",
 }
 
 // Client2DNClient is the client API for Client2DN service.
@@ -556,257 +844,5 @@ var Client2DN_ServiceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 	},
-	Metadata: "proto/protocol.proto",
-}
-
-// NN2DNClient is the client API for NN2DN service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type NN2DNClient interface {
-	// 获取block的信息
-	GetReport(ctx context.Context, in *Ping, opts ...grpc.CallOption) (*BlockReplicaList, error)
-}
-
-type nN2DNClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewNN2DNClient(cc grpc.ClientConnInterface) NN2DNClient {
-	return &nN2DNClient{cc}
-}
-
-func (c *nN2DNClient) GetReport(ctx context.Context, in *Ping, opts ...grpc.CallOption) (*BlockReplicaList, error) {
-	out := new(BlockReplicaList)
-	err := c.cc.Invoke(ctx, "/proto.NN2DN/GetReport", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// NN2DNServer is the server API for NN2DN service.
-// All implementations must embed UnimplementedNN2DNServer
-// for forward compatibility
-type NN2DNServer interface {
-	// 获取block的信息
-	GetReport(context.Context, *Ping) (*BlockReplicaList, error)
-	mustEmbedUnimplementedNN2DNServer()
-}
-
-// UnimplementedNN2DNServer must be embedded to have forward compatible implementations.
-type UnimplementedNN2DNServer struct {
-}
-
-func (UnimplementedNN2DNServer) GetReport(context.Context, *Ping) (*BlockReplicaList, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetReport not implemented")
-}
-func (UnimplementedNN2DNServer) mustEmbedUnimplementedNN2DNServer() {}
-
-// UnsafeNN2DNServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to NN2DNServer will
-// result in compilation errors.
-type UnsafeNN2DNServer interface {
-	mustEmbedUnimplementedNN2DNServer()
-}
-
-func RegisterNN2DNServer(s grpc.ServiceRegistrar, srv NN2DNServer) {
-	s.RegisterService(&NN2DN_ServiceDesc, srv)
-}
-
-func _NN2DN_GetReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Ping)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(NN2DNServer).GetReport(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/proto.NN2DN/GetReport",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NN2DNServer).GetReport(ctx, req.(*Ping))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-// NN2DN_ServiceDesc is the grpc.ServiceDesc for NN2DN service.
-// It's only intended for direct use with grpc.RegisterService,
-// and not to be introspected or modified (even as a copy)
-var NN2DN_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "proto.NN2DN",
-	HandlerType: (*NN2DNServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "GetReport",
-			Handler:    _NN2DN_GetReport_Handler,
-		},
-	},
-	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto/protocol.proto",
-}
-
-// DN2NNClient is the client API for DN2NN service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type DN2NNClient interface {
-	// 心跳
-	HeartBeat(ctx context.Context, in *Heartbeat, opts ...grpc.CallOption) (*DatanodeOperation, error)
-	// 汇报自身状态
-	BlockReport(ctx context.Context, in *BlockReplicaList, opts ...grpc.CallOption) (*OperationStatus, error)
-	// 注册
-	Register(ctx context.Context, in *RegisterDataNodeReq, opts ...grpc.CallOption) (*OperationStatus, error)
-}
-
-type dN2NNClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewDN2NNClient(cc grpc.ClientConnInterface) DN2NNClient {
-	return &dN2NNClient{cc}
-}
-
-func (c *dN2NNClient) HeartBeat(ctx context.Context, in *Heartbeat, opts ...grpc.CallOption) (*DatanodeOperation, error) {
-	out := new(DatanodeOperation)
-	err := c.cc.Invoke(ctx, "/proto.DN2NN/HeartBeat", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *dN2NNClient) BlockReport(ctx context.Context, in *BlockReplicaList, opts ...grpc.CallOption) (*OperationStatus, error) {
-	out := new(OperationStatus)
-	err := c.cc.Invoke(ctx, "/proto.DN2NN/BlockReport", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *dN2NNClient) Register(ctx context.Context, in *RegisterDataNodeReq, opts ...grpc.CallOption) (*OperationStatus, error) {
-	out := new(OperationStatus)
-	err := c.cc.Invoke(ctx, "/proto.DN2NN/Register", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// DN2NNServer is the server API for DN2NN service.
-// All implementations must embed UnimplementedDN2NNServer
-// for forward compatibility
-type DN2NNServer interface {
-	// 心跳
-	HeartBeat(context.Context, *Heartbeat) (*DatanodeOperation, error)
-	// 汇报自身状态
-	BlockReport(context.Context, *BlockReplicaList) (*OperationStatus, error)
-	// 注册
-	Register(context.Context, *RegisterDataNodeReq) (*OperationStatus, error)
-	mustEmbedUnimplementedDN2NNServer()
-}
-
-// UnimplementedDN2NNServer must be embedded to have forward compatible implementations.
-type UnimplementedDN2NNServer struct {
-}
-
-func (UnimplementedDN2NNServer) HeartBeat(context.Context, *Heartbeat) (*DatanodeOperation, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method HeartBeat not implemented")
-}
-func (UnimplementedDN2NNServer) BlockReport(context.Context, *BlockReplicaList) (*OperationStatus, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method BlockReport not implemented")
-}
-func (UnimplementedDN2NNServer) Register(context.Context, *RegisterDataNodeReq) (*OperationStatus, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Register not implemented")
-}
-func (UnimplementedDN2NNServer) mustEmbedUnimplementedDN2NNServer() {}
-
-// UnsafeDN2NNServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to DN2NNServer will
-// result in compilation errors.
-type UnsafeDN2NNServer interface {
-	mustEmbedUnimplementedDN2NNServer()
-}
-
-func RegisterDN2NNServer(s grpc.ServiceRegistrar, srv DN2NNServer) {
-	s.RegisterService(&DN2NN_ServiceDesc, srv)
-}
-
-func _DN2NN_HeartBeat_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Heartbeat)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DN2NNServer).HeartBeat(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/proto.DN2NN/HeartBeat",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DN2NNServer).HeartBeat(ctx, req.(*Heartbeat))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _DN2NN_BlockReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(BlockReplicaList)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DN2NNServer).BlockReport(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/proto.DN2NN/BlockReport",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DN2NNServer).BlockReport(ctx, req.(*BlockReplicaList))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _DN2NN_Register_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RegisterDataNodeReq)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DN2NNServer).Register(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/proto.DN2NN/Register",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DN2NNServer).Register(ctx, req.(*RegisterDataNodeReq))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-// DN2NN_ServiceDesc is the grpc.ServiceDesc for DN2NN service.
-// It's only intended for direct use with grpc.RegisterService,
-// and not to be introspected or modified (even as a copy)
-var DN2NN_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "proto.DN2NN",
-	HandlerType: (*DN2NNServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "HeartBeat",
-			Handler:    _DN2NN_HeartBeat_Handler,
-		},
-		{
-			MethodName: "BlockReport",
-			Handler:    _DN2NN_BlockReport_Handler,
-		},
-		{
-			MethodName: "Register",
-			Handler:    _DN2NN_Register_Handler,
-		},
-	},
-	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto/protocol.proto",
+	Metadata: "protocol.proto",
 }

@@ -3,4 +3,8 @@ host: localhost
 replicaNum: 3
 interval: 3
 ioSize: 100
-blockSize: 8096
+blockSize: 1024
+heartbeatTimeout: 50
+dirTree: "./DirTree"
+name: "nn01"
+path: "./NNData/"

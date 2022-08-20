@@ -6,17 +6,17 @@ type ReplicaState int
 type DNStatus int
 
 type BlockMeta struct {
-	Name string
-	Gs   int64
-	ID   int64
+	ID          string
+	ReplicaInfo []ReplicaMeta
 }
 
 type ReplicaMeta struct {
 	BlockName string
 	FileSize  int64
 	Ip        string
+	DNName    string
 	State     ReplicaState
-	ReplicaID int64
+	ReplicaID string
 }
 
 type DNMeta struct {
@@ -33,13 +33,45 @@ const (
 	ReplicaCommit  = DNStatus(4)
 )
 
+type NNBlockID string
+type DNBlockID string
+
 type NameNode struct {
-	FileToBlock     map[string][]BlockMeta
-	BlockToLocation map[string][]ReplicaMeta
-	DNList          []DNMeta
+	FileToBlock     map[NNBlockID]*BlockMeta
+	DN2NNBlockMap   map[DNBlockID]NNBlockID
+	BlockToLocation map[string][]*ReplicaMeta
+	DNList          map[string]*DNMeta
+
+	ReplicaList map[string][]string
 
 	BlockSize     int64
 	ReplicaFactor int64
+}
+
+type DirString string
+type FileString string
+
+type MetaId int64
+
+type DirTree struct {
+	Next map[string]DirTree
+
+	Single       string
+	Path         string
+	IsDir        bool
+	DirMetaInfo  DirMeta
+	FileMetaInfo FileMeta
+}
+
+type DirMeta struct {
+	Path string `yaml:"path"`
+}
+
+type FileMeta struct {
+	Name       string            `yaml:"name"`
+	Blocks     map[string]string `yaml:"blocks"`
+	CrateTime  string            `yaml:"crate"`
+	UpdateTime string            `yaml:"update"`
 }
 
 type Lease struct {
@@ -55,4 +87,17 @@ type Lease struct {
 type LeaseMgr struct {
 	FileToMetaMap map[string]Lease
 	mu            sync.Mutex
+}
+
+type ReplicaMetaYamlList struct {
+	Blocks map[string]ReplicaMetaYaml `yaml:"blocks"`
+}
+
+type ReplicaMetaYaml struct {
+	BlockName string       `yaml:"blockName"`
+	FileSize  int64        `yaml:"fileSize"`
+	Ip        string       `yaml:"ip"`
+	DNName    string       `yaml:"dn"`
+	State     ReplicaState `yaml:"state"`
+	ReplicaID string       `yaml:"replicaId"`
 }

@@ -16,8 +16,23 @@ func GetConfigPath() string {
 	}
 }
 
+func GetIPDebug() string {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return ""
+	}
+	for _, address := range addrs {
+		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipnet.IP.To4() != nil {
+				return ipnet.IP.String()
+			}
+		}
+	}
+	return ""
+}
+
 func GetIP() net.IP {
-	conn, err := net.Dial("udp", "8.8.8.8:80")
+	conn, err := net.Dial("udp", "8.8.8.8:53")
 	if err != nil {
 		WriteLog(
 			"error", "error",
@@ -28,4 +43,11 @@ func GetIP() net.IP {
 
 	local := conn.LocalAddr().(*net.UDPAddr)
 	return local.IP
+}
+
+func Update[T comparable, Y any](src map[T]Y, target map[T]Y) map[T]Y {
+	for k, v := range target {
+		src[k] = v
+	}
+	return src
 }
