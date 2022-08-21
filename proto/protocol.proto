@@ -13,6 +13,7 @@ message BlockList {
     int64 num = 2;
     int64 DiskUsage = 3;
     string DNName = 4;
+    string ReplicaName = 5;
 }
 
 message BlockLocation {

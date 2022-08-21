@@ -1,6 +1,8 @@
 package NNService
 
-import "sync"
+import (
+	"sync"
+)
 
 type ReplicaState int
 type DNStatus int
@@ -36,13 +38,28 @@ const (
 type NNBlockID string
 type DNBlockID string
 
-type NameNode struct {
-	FileToBlock     map[NNBlockID]*BlockMeta
-	DN2NNBlockMap   map[DNBlockID]NNBlockID
-	BlockToLocation map[string][]*ReplicaMeta
-	DNList          map[string]*DNMeta
+type NNAddr string
 
-	ReplicaList map[string][]string
+type NNRole int
+
+type ReplicaName string
+
+const (
+	ActiveNN  = NNRole(0)
+	StandByNN = NNRole(1)
+)
+
+type NameNode struct {
+	FileToBlock   map[NNBlockID]*BlockMeta // NNBlockID单独对应一个块，每个BlockMeta含有一个ReplicaList，List中的数据均为这个块的副本
+	DN2NNBlockMap map[DNBlockID]NNBlockID  // DNBlock到NNBlock的映射，每个DNBlock都能反向寻找到一个NNBlock
+	// BlockToLocation map[string][]*ReplicaMeta
+	DNList    map[string]*DNMeta
+	IdleQueue map[ReplicaName]map[string]*DNBlockQueue
+
+	ReplicaList  map[string][]string // 当前NameNode中有那些ReplicaList
+	NameNodeList map[string][]NNAddr // 当前NameNode集合
+
+	Role NNRole
 
 	BlockSize     int64
 	ReplicaFactor int64
@@ -87,6 +104,11 @@ type Lease struct {
 type LeaseMgr struct {
 	FileToMetaMap map[string]Lease
 	mu            sync.Mutex
+}
+
+type NNBlockMeta struct {
+	Id      string               `yaml:"id"`
+	BlockId map[string]DNBlockID `yaml:"DNBlocks"`
 }
 
 type ReplicaMetaYamlList struct {

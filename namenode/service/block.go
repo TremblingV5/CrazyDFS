@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 
 	"github.com/TremblingV5/CrazyDFS/config/items"
-	"github.com/TremblingV5/CrazyDFS/proto"
 	"github.com/TremblingV5/CrazyDFS/utils"
 	"gopkg.in/yaml.v3"
 )
@@ -21,42 +20,6 @@ func InitBlockMetaList(nn *NameNode, config items.NN) {
 	} else {
 
 	}
-}
-
-func GenBlockMeta(
-	nn *NameNode,
-	config items.NN,
-	args *proto.BlockList,
-	start MetaId,
-	path string,
-) MetaId {
-	tempFile2Block := make(map[NNBlockID]*BlockMeta)
-	tempDN2NNBlockMap := make(map[DNBlockID]NNBlockID)
-
-	for _, value := range args.BlockL {
-		newReplicaMeta := &ReplicaMeta{
-			BlockName: value.BlockName,
-			Ip:        value.IpAddr,
-			DNName:    args.DNName,
-		}
-
-		tempFile2Block[NNBlockID(rune(start))] = &BlockMeta{
-			ID: value.BlockName,
-			ReplicaInfo: []ReplicaMeta{
-				*newReplicaMeta,
-			},
-		}
-
-		dnBLockId := args.DNName + "." + value.BlockName
-		tempDN2NNBlockMap[DNBlockID(dnBLockId)] = NNBlockID(rune(start))
-
-		start = start.Next()
-	}
-
-	nn.FileToBlock = utils.Update(nn.FileToBlock, tempFile2Block)
-	nn.DN2NNBlockMap = utils.Update(nn.DN2NNBlockMap, tempDN2NNBlockMap)
-
-	return start
 }
 
 func ReadInitedBlockMeta(

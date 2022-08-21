@@ -19,6 +19,8 @@ var config, _ = utils.InitNodeConfig(items.DN{}, values.DataNodeConfigPath)
 func InitBlock(dataPath string, blockNum int64) []*proto.BlockLocation {
 	var blockList []*proto.BlockLocation
 
+	utils.CheckAndMkdir(dataPath)
+
 	currId := BlockID(1)
 
 	for i := int64(1); i <= blockNum; i++ {
@@ -31,7 +33,7 @@ func InitBlock(dataPath string, blockNum int64) []*proto.BlockLocation {
 			ReplicaState: proto.BlockLocation_Idle,
 		}
 
-		ioutil.WriteFile(dataPath+"\\"+blockName, []byte{1}, 0777)
+		ioutil.WriteFile(dataPath+"\\"+blockName, []byte{}, 0777)
 
 		blockList = append(blockList, &newBlock)
 		currId = currId.Next()

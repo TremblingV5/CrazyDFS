@@ -22,6 +22,8 @@ type server struct {
 
 var BlockList = []*proto.BlockLocation{}
 
+var self = DNService.DataNode{}
+
 func (s server) GetBlock(mode *proto.FileOperationArgs, blockServer proto.Client2DN_GetBlockServer) error {
 	b := DNService.GetBlock(mode.FileName, "r")
 
@@ -100,9 +102,6 @@ func HeartBeat(config items.DN) {
 }
 
 func BlockReport(config items.DN) {
-	duration := time.Second * time.Duration(config.HeartBeatInterval)
-	time.Sleep(duration * 5)
-
 	conn, err := grpc.Dial(config.NNHost+":"+config.NNPort, grpc.WithInsecure())
 	if err != nil {
 		panic(err)
@@ -125,7 +124,8 @@ func BlockReport(config items.DN) {
 			}
 			return int64(num)
 		}(),
-		DNName: config.Name,
+		DNName:      config.Name,
+		ReplicaName: config.ReplicaName,
 	}
 	res, err := c.BlockReport(ctx, req)
 	if err != nil {
@@ -133,6 +133,10 @@ func BlockReport(config items.DN) {
 	}
 
 	fmt.Println("Block report: ", res)
+
+	duration := time.Second * time.Duration(config.HeartBeatInterval)
+	time.Sleep(duration * 5)
+
 	BlockReport(config)
 }
 
@@ -178,6 +182,8 @@ func Init(config items.DN) {
 		BlockList = DNService.InitBlock(dataPath, blockNum)
 		fmt.Println("First time to init blocks")
 	}
+
+	DNService.InitMeta(&self, config)
 
 	fmt.Println("Initialization successful with " + strconv.FormatInt(int64(len(BlockList)), 10) + " blocks")
 }

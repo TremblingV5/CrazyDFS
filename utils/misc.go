@@ -51,3 +51,19 @@ func Update[T comparable, Y any](src map[T]Y, target map[T]Y) map[T]Y {
 	}
 	return src
 }
+
+func IsExist(arr []string, element string) bool {
+	for _, item := range arr {
+		if item == element {
+			return true
+		}
+	}
+	return false
+}
+
+func CheckAndMkdir(path string) {
+	_, err := os.Stat(path)
+	if os.IsNotExist(err) {
+		os.MkdirAll(path, 0777)
+	}
+}

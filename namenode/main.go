@@ -20,10 +20,13 @@ var Config, _ = utils.InitNodeConfig(items.NN{}, values.DataNodeConfigPath)
 var CurrMetaId = NNService.MetaId(1)
 
 var self = NNService.NameNode{
-	FileToBlock:   make(map[NNService.NNBlockID]*NNService.BlockMeta),
-	DN2NNBlockMap: make(map[NNService.DNBlockID]NNService.NNBlockID),
-	DNList:        make(map[string]*NNService.DNMeta),
-	ReplicaList:   make(map[string][]string),
+	FileToBlock:   make(map[NNService.NNBlockID]*NNService.BlockMeta),                 // 每次有新的slice时创建
+	DN2NNBlockMap: make(map[NNService.DNBlockID]NNService.NNBlockID),                  // 向DN的Block写入数据后创建
+	IdleQueue:     make(map[NNService.ReplicaName]map[string]*NNService.DNBlockQueue), // 有新的节点Block Report后创建，然后只维护
+	DNList:        make(map[string]*NNService.DNMeta),                                 // DN列表，只存放DN的信息
+	ReplicaList:   make(map[string][]string),                                          // Replica列表，第一个string是Replica的唯一Name，第二个string是DN的Name
+	NameNodeList:  make(map[string][]NNService.NNAddr),                                // string为NN的名称，后续只记录地址
+	Role:          NNService.ActiveNN,                                                 // 记录当前NN的角色是Active还是StandBy
 	BlockSize:     Config.BlockSize,
 	ReplicaFactor: Config.ReplicaNum,
 }
@@ -61,13 +64,29 @@ func (s serverD2N) HeartBeat(ctx context.Context, args *proto.Heartbeat) (*proto
 func (s serverD2N) BlockReport(ctx context.Context, args *proto.BlockList) (*proto.OperationStatus, error) {
 	fmt.Println("Receive block report from " + args.DNName)
 
-	CurrMetaId = NNService.GenBlockMeta(
-		&self,
-		Config,
-		args,
-		CurrMetaId,
-		Config.Path,
-	)
+	if _, ok := self.ReplicaList[args.ReplicaName]; ok {
+		// 已经存在的副本集
+		list := self.ReplicaList[args.ReplicaName]
+		if utils.IsExist(list, args.DNName) {
+			// 已经注册过的DN
+			// 接收BlockReport并更新信息
+		} else {
+			// 尚未注册过的DN
+			// 向IdleQueue添加未使用节点
+			self.InitIdleQueue(args)
+		}
+	} else {
+		// 尚未存在的副本集
+		// 初始化FileToBlock
+		// 向IdleQueue添加未使用节点
+		self.InitFile2Block(
+			&CurrMetaId,
+			args,
+			Config.Path,
+		)
+		self.InitIdleQueue(args)
+		self.ReplicaList[args.ReplicaName] = append(self.ReplicaList[args.ReplicaName], args.ReplicaName)
+	}
 
 	return &proto.OperationStatus{
 		Success: true,
@@ -125,6 +144,9 @@ func (s serverC2N) RenewLock(ctx context.Context, args *proto.GetLeaseArgs) (*pr
 
 func Init(config items.NN) {
 	NNService.InitBlockMetaList(&self, config)
+	self.ReadFile2BlockAndReplicaList(config.Path)
+	self.ReadDN2NNBlockMap(config.Path)
+	self.ReadIdleQueue(config.Path)
 
 	dataPath := config.Path + config.Name
 	list, _ := ioutil.ReadDir(dataPath)

@@ -17,3 +17,9 @@ type Block struct {
 }
 
 type BlockID int64
+
+type ReplicaName string
+
+type DataNode struct {
+	ReplicaName ReplicaName
+}
