@@ -58,15 +58,15 @@ func WriteYamlMeta[T FileMeta | DirMeta](meta *T, path string) {
 }
 
 func GenFSImage(tree *DirTree, path string) {
-	temp := make(map[string]DirTree)
+	temp := make(map[string]*DirTree)
 	items, _ := ioutil.ReadDir(path)
 	for _, item := range items {
 		if item.IsDir() {
 			// 是一个目录，向下遍历
 			dirMeta := DirMeta{}
-			ReadYamlMeta(&dirMeta, path+"\\"+"$META$")
+			ReadYamlMeta(&dirMeta, path+"/"+"$META$")
 			nextTree := DirTree{
-				Next:         make(map[string]DirTree),
+				Next:         make(map[string]*DirTree),
 				Single:       item.Name(),
 				Path:         path,
 				IsDir:        true,
@@ -75,13 +75,13 @@ func GenFSImage(tree *DirTree, path string) {
 			}
 			GenFSImage(
 				&nextTree,
-				path+"\\"+item.Name(),
+				path+"/"+item.Name(),
 			)
-			temp[item.Name()] = nextTree
+			temp[item.Name()] = &nextTree
 		} else {
 			// 是一个文件，登记信息，结束
 			fileMeta := FileMeta{}
-			ReadYamlMeta(&fileMeta, path+"\\"+item.Name())
+			ReadYamlMeta(&fileMeta, path+"/"+item.Name())
 			nextTree := DirTree{
 				Next:         nil,
 				Single:       item.Name(),
@@ -90,7 +90,7 @@ func GenFSImage(tree *DirTree, path string) {
 				DirMetaInfo:  DirMeta{},
 				FileMetaInfo: fileMeta,
 			}
-			temp[item.Name()] = nextTree
+			temp[item.Name()] = &nextTree
 		}
 	}
 	tree.Next = temp
@@ -101,11 +101,11 @@ func DownFSImage(tree *DirTree, path string) {
 		return
 	} else {
 		for _, item := range tree.Next {
-			nextPath := path + "\\" + item.Single
+			nextPath := path + "/" + item.Single
 			if item.IsDir {
 				// 是目录，先创建下一级目录然后写如目录的meta
 				os.Mkdir(nextPath, 0777)
-				WriteYamlMeta(&tree.DirMetaInfo, nextPath+"\\"+"$META$")
+				WriteYamlMeta(&tree.DirMetaInfo, nextPath+"/"+"$META$")
 			} else {
 				// 不是目录，直接写入meta
 				WriteYamlMeta(&tree.FileMetaInfo, nextPath)

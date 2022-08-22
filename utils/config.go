@@ -28,7 +28,7 @@ func InitConfig() error {
 	return nil
 }
 
-func InitNodeConfig[T items.DN | items.NN](config T, path string) (T, error) {
+func InitNodeConfig[T items.DN | items.NN | items.Client](config T, path string) (T, error) {
 	file, err := ioutil.ReadFile(path)
 
 	if err != nil {

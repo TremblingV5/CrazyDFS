@@ -1,9 +1,12 @@
 package utils
 
 import (
+	"io/ioutil"
 	"net"
 	"os"
 	"strings"
+
+	"gopkg.in/yaml.v3"
 )
 
 func GetConfigPath() string {
@@ -65,5 +68,35 @@ func CheckAndMkdir(path string) {
 	_, err := os.Stat(path)
 	if os.IsNotExist(err) {
 		os.MkdirAll(path, 0777)
+	}
+}
+
+func ReadYaml[T any](path string, t *T) {
+	bytes, err := ioutil.ReadFile(path)
+	if err != nil {
+		WriteLog(
+			"error", "Read yaml " + path + " defeat",
+		)
+	}
+
+	if err := yaml.Unmarshal(bytes, t); err != nil {
+		WriteLog(
+			"error", "Unmarshal " + path + " defeat",
+		)
+	}
+}
+
+func WriteYaml[T any](path string, t *T) {
+	bytes, err := yaml.Marshal(t)
+	if err != nil {
+		WriteLog(
+			"error", "Marshal yaml " + path + " defeat",
+		)
+	}
+
+	if err := ioutil.WriteFile(path, bytes, 0777); err != nil {
+		WriteLog(
+			"error", "Write yaml file " + path + " defeat",
+		)
 	}
 }

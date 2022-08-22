@@ -33,7 +33,7 @@ func InitBlock(dataPath string, blockNum int64) []*proto.BlockLocation {
 			ReplicaState: proto.BlockLocation_Idle,
 		}
 
-		ioutil.WriteFile(dataPath+"\\"+blockName, []byte{}, 0777)
+		ioutil.WriteFile(dataPath+"/"+blockName, []byte{}, 0777)
 
 		blockList = append(blockList, &newBlock)
 		currId = currId.Next()

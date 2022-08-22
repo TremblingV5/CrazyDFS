@@ -4,6 +4,7 @@ interval: 3
 ioSize: 100
 blockSize: 1024
 heartbeatTimeout: 50
-dirTree: "./DirTree"
+dirTree: "./DATA/DirTree"
 name: "nn01"
-path: "./NNData/"
+path: "./DATA/NNData/"
+mapPath: "./DATA/DN2NNMap"

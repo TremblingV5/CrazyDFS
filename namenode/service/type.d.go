@@ -50,8 +50,9 @@ const (
 )
 
 type NameNode struct {
+	DirTree *DirTree
 	FileToBlock   map[NNBlockID]*BlockMeta // NNBlockID单独对应一个块，每个BlockMeta含有一个ReplicaList，List中的数据均为这个块的副本
-	DN2NNBlockMap map[DNBlockID]NNBlockID  // DNBlock到NNBlock的映射，每个DNBlock都能反向寻找到一个NNBlock
+	DN2NNBlockMap map[DNBlockID]*DN2NNBlockMap  // DNBlock到NNBlock的映射，每个DNBlock都能反向寻找到一个NNBlock
 	// BlockToLocation map[string][]*ReplicaMeta
 	DNList    map[string]*DNMeta
 	IdleQueue map[ReplicaName]map[string]*DNBlockQueue
@@ -65,13 +66,18 @@ type NameNode struct {
 	ReplicaFactor int64
 }
 
+type DN2NNBlockMap struct {
+	DNBlockID string `yaml:"DNBlock"`
+	NNBlockID string `yaml:"NNBlock"`
+}
+
 type DirString string
 type FileString string
 
 type MetaId int64
 
 type DirTree struct {
-	Next map[string]DirTree
+	Next map[string]*DirTree
 
 	Single       string
 	Path         string
@@ -87,8 +93,8 @@ type DirMeta struct {
 type FileMeta struct {
 	Name       string            `yaml:"name"`
 	Blocks     map[string]string `yaml:"blocks"`
-	CrateTime  string            `yaml:"crate"`
-	UpdateTime string            `yaml:"update"`
+	CrateTime  int64            `yaml:"crate"`
+	UpdateTime int64            `yaml:"update"`
 }
 
 type Lease struct {

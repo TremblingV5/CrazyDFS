@@ -156,6 +156,10 @@ func Register(config items.DN) error {
 	status, err := c.Register(ctx, &proto.RegisterDataNodeReq{
 		New:  true,
 		Addr: utils.GetIP().String() + ":" + config.Port,
+		Name: config.Name,
+		ReplicaName: config.ReplicaName,
+		BlockNum: uint64(config.BlockNum),
+		DiskUsage: 0,
 	})
 	if err != nil {
 		panic(err)

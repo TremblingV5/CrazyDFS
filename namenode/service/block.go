@@ -32,7 +32,7 @@ func ReadInitedBlockMeta(
 	tempDN2NNBlockMap := make(map[DNBlockID]NNBlockID)
 
 	for _, item := range fileList {
-		bytes, _ := ioutil.ReadFile(path + "\\" + item.Name())
+		bytes, _ := ioutil.ReadFile(path + "/" + item.Name())
 		var blocks ReplicaMetaYamlList
 
 		if err := yaml.Unmarshal(bytes, blocks); err != nil {

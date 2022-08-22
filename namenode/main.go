@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/TremblingV5/CrazyDFS/config/items"
@@ -20,8 +21,17 @@ var Config, _ = utils.InitNodeConfig(items.NN{}, values.DataNodeConfigPath)
 var CurrMetaId = NNService.MetaId(1)
 
 var self = NNService.NameNode{
+	DirTree: &NNService.DirTree{
+		Next: make(map[string]*NNService.DirTree),
+		Single: "/",
+		Path: Config.DirTree,
+		IsDir: true,
+		DirMetaInfo: NNService.DirMeta{
+			Path: Config.DirTree,
+		},
+	},
 	FileToBlock:   make(map[NNService.NNBlockID]*NNService.BlockMeta),                 // 每次有新的slice时创建
-	DN2NNBlockMap: make(map[NNService.DNBlockID]NNService.NNBlockID),                  // 向DN的Block写入数据后创建
+	DN2NNBlockMap: make(map[NNService.DNBlockID]*NNService.DN2NNBlockMap),                  // 向DN的Block写入数据后创建
 	IdleQueue:     make(map[NNService.ReplicaName]map[string]*NNService.DNBlockQueue), // 有新的节点Block Report后创建，然后只维护
 	DNList:        make(map[string]*NNService.DNMeta),                                 // DN列表，只存放DN的信息
 	ReplicaList:   make(map[string][]string),                                          // Replica列表，第一个string是Replica的唯一Name，第二个string是DN的Name
@@ -102,7 +112,7 @@ func (s serverD2N) Register(ctx context.Context, args *proto.RegisterDataNodeReq
 	}
 	self.DNList[args.Name] = &newDN
 
-	self.ReplicaList[args.ReplicaName] = append(self.ReplicaList[args.ReplicaName], args.Name)
+	// self.ReplicaList[args.ReplicaName] = append(self.ReplicaList[args.ReplicaName], args.Name)
 
 	res := &proto.OperationStatus{
 		Success: true,
@@ -115,7 +125,60 @@ func (s serverC2N) FileOperation(ctx context.Context, mode *proto.FileOperationA
 }
 
 func (s serverC2N) PutFile(ctx context.Context, args *proto.PathArgs) (*proto.FileLocationResp, error) {
-	return nil, nil
+	nnPathList := strings.Split(args.PathName, "/")
+
+	curr := self.DirTree
+	currPath := ""
+
+	for index, item := range nnPathList {
+		if curr.Next[item] != nil {
+			// 路径已经存在了
+			curr = curr.Next[item]
+		} else {
+			// 路径尚不存在
+			isDir := func(index int, size int) bool {
+					if index < size - 1 {
+						return true
+					} else {
+						return false
+					}
+				}(index, len(nnPathList))
+			temp := NNService.DirTree{
+				Next: make(map[string]*NNService.DirTree),
+				Single: item,
+				Path: currPath + item,
+				IsDir: isDir,
+				DirMetaInfo: func(isDir bool) NNService.DirMeta {
+					if isDir {
+						return NNService.DirMeta{
+							Path: currPath + item,
+						}
+					} else {
+						return NNService.DirMeta{}
+					}
+				}(isDir),
+				FileMetaInfo: func(isDir bool) NNService.FileMeta {
+					if isDir {
+						return NNService.FileMeta{}
+					} else {
+						return NNService.FileMeta{
+							Name: item,
+							Blocks: make(map[string]string),
+							CrateTime: time.Now().Unix(),
+							UpdateTime: time.Now().Unix(),
+						}
+					}
+				}(isDir),
+			}
+			curr.Next[item] = &temp
+			curr = curr.Next[item]
+		}
+		currPath += item
+	}
+
+	return &proto.FileLocationResp{
+		
+	}, nil
 }
 
 func (s serverC2N) Meta(ctx context.Context, mode *proto.FileOperationArgs) (*proto.OperationStatus, error) {
@@ -143,10 +206,13 @@ func (s serverC2N) RenewLock(ctx context.Context, args *proto.GetLeaseArgs) (*pr
 }
 
 func Init(config items.NN) {
+	utils.CheckAndMkdir(config.DirTree)
+	utils.CheckAndMkdir(config.DN2NNMapPath)
+
 	NNService.InitBlockMetaList(&self, config)
 	self.ReadFile2BlockAndReplicaList(config.Path)
-	self.ReadDN2NNBlockMap(config.Path)
-	self.ReadIdleQueue(config.Path)
+	self.ReadDN2NNBlockMap(config.DN2NNMapPath)
+	// self.ReadIdleQueue(config.Path)
 
 	dataPath := config.Path + config.Name
 	list, _ := ioutil.ReadDir(dataPath)

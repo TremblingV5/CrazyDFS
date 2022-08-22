@@ -9,4 +9,5 @@ type NN struct {
 	DirTree    string `yaml:"dirTree"`
 	Name       string `yaml:"name"`
 	Path       string `yaml:"path"`
+	DN2NNMapPath string `yaml:"mapPath"`
 }
